@@ -1,0 +1,32 @@
+# Bytecode compilado de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+
+# Archivos específicos de VS Code
+.vscode/
+*.code-workspace
+
+# Archivos temporales o de ayuda
+help.txt
+
+# Entornos virtuales
+env/
+venv/
+.entornoFastApi/
+.env/
+
+# Archivos de log
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos generados por FastAPI/uvicorn
+*.db
+*.sqlite3
+
+# Archivos extraños de Python compilado
+*.cpython-*
