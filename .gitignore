@@ -12,10 +12,14 @@ __pycache__/
 help.txt
 
 # Entornos virtuales
+entornoFastApi/
+.entornoFastApi/
 env/
 venv/
-.entornoFastApi/
 .env/
+**/entornoFastApi/
+**/.entornoFastApi/
+
 
 # Archivos de log
 *.log

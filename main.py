@@ -1,24 +1,18 @@
 from builtins import str
 from fastapi import FastAPI 
-import spacy
 
+from servicios import invertir_texto, adverbs, detección_de_verbos
 
 app = FastAPI()
 
-nlp_en = spacy.load("en_core_web_sm")
-nlp_es = spacy.load("es_core_web_sm")
-
 @app.get("/invertir_texto/") 
-def invertir_texto(texto: str): 
-    texto_invertido = texto[::-1] 
-    return {"respuesta": texto_invertido}
+def invertir(texto: str): 
+    return invertir_texto.invertir_texto(texto)
 
 @app.get("/adverbs/") 
-def adverbs(texto: str): 
-    doc = nlp_es(texto)
-    adverbios = [token.text for token in doc if token.pos_ == "ADV"]
+def detectar_adverbs(texto: str): 
+    return adverbs.adverbs(texto)
 
-    if adverbios:
-        return {"respuesta": f"Posee adverbios: {', '.join(adverbios)}"}
-    else:
-        return {"respuesta": "No posee adverbios"}
+@app.get("/detección_de_verbos/")
+def verificacion(texto: str):
+    return detección_de_verbos.detectar_tiempo_verbal(texto)
