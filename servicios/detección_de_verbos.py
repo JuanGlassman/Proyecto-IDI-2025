@@ -1,60 +1,116 @@
 import spacy
 from spacy.matcher import Matcher
 
-nlp = spacy.load("es_dep_news_trf") 
+# Carga del modelo (se incluye fallback opcional)
+try:
+    nlp = spacy.load("es_dep_news_trf")
+except OSError:
+    # Fallback: >pip install es_core_news_md
+    nlp = spacy.load("es_core_news_md")
 
+
+    # ------Construccion del matcher ------
+    matcher = Matcher(nlp.vocab)
+    
+
+
+    # ---- Patrones para el matcher para verbos compuestos y perfífrasis ----
+    
+    
+    # Pretérito perfecto compuesto: haber(Pres) + Part
+    # Ejemplo: "he comido", "has hablado"
+    patrón_perf_comp = [
+        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},  # opcionales en medio (no, ya, etc.)
+        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+    ]
+    matcher.add("PERFECTO_COMPUESTO", [patrón_perf_comp])
+
+
+    # Pretérito pluscuamperfecto: haber(Past) + Part
+    # Ejemplo: "había comido", "habías hablado"
+    patrón_pluscuam = [
+        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Past"]}},
+        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+    ]
+    matcher.add("PLUSCUAMPERFECTO", [patrón_pluscuam])
+
+
+    # Futuro compuesto: haber(Fut) + Part
+    # Ejemplo: "habré comido", "habrás hablado"
+    patrón_fut_comp = [
+        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Fut"]}},
+        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+    ]
+    matcher.add("FUTURO_COMPUESTO", [patrón_fut_comp])
+
+
+    # Futuro perifrástico: ir(Pres) + a + Inf
+    # Ejemplo: "voy a comer", "va a hablar"
+    patrón_fut_peri = [
+        {"LEMMA": "ir", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+        {"LOWER": "a"},
+        {"MORPH": {"IS_SUPERSET": ["VerbForm=Inf"]}}
+    ]
+    matcher.add("FUTURO_PERIFRASTICO", [patrón_fut_peri])
+
+
+    # Presente progresivo: estar(Pres) + (Adv/Part)* + Ger
+    # Ejemplo: "estoy comiendo", "estás hablando"
+    patrón_pres_prog = [
+        {"LEMMA": "estar", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+        {"MORPH": {"IS_SUPERSET": ["VerbForm=Ger"]}}
+    ]
+    matcher.add("PRESENTE_PROGRESIVO", [patrón_pres_prog])
+
+
+# Función principal para detectar tiempos verbales
 def detectar_tiempo_verbal(texto: str):
     """
-    Detecta tiempos verbales en español usando spaCy.
+    Detecta tiempos verbales (simples y algunas perífrasis) en español usando spaCy.
+    Devuelve una lista de tuplas (expresión_detectada, etiqueta_tiempo).
     """
     doc = nlp(texto)
     resultados = []
 
-    
+
+    # Tiempos simples con analisis morfológico
     for token in doc:
-        # Verbos simples en pasado
-        if token.pos_ in {"VERB", "AUX"} and token.morph.get("Tense") == ["Past"]:
-            resultados.append((token.text, "Pasado simple/Imperfecto"))
-
-    # Perfecto compuesto y pluscuamperfecto
-    for i in range(len(doc)-1):
-        if doc[i].lemma_ == "haber" and doc[i].pos_ == "AUX":
-            if doc[i+1].morph.get("VerbForm") == ["Part"]:
-                if doc[i].morph.get("Tense") == ["Pres"]:
-                    resultados.append((f"{doc[i].text} {doc[i+1].text}", "Pretérito perfecto compuesto"))
-                elif doc[i].morph.get("Tense") == ["Past"]:
-                    resultados.append((f"{doc[i].text} {doc[i+1].text}", "Pretérito pluscuamperfecto"))
-    
-    if not resultados: 
-        for token in doc:
-            # Futuro simple
-            if token.pos_ in {"VERB", "AUX"} and token.morph.get("Tense") == ["Fut"]:
-                resultados.append((token.text, "Futuro simple"))
-
-        # Futuro compuesto
-        for i in range(len(doc)-1):
-            if doc[i].lemma_ == "haber" and doc[i].pos_ == "AUX" and doc[i].morph.get("Tense") == ["Fut"]:
-                if doc[i+1].morph.get("VerbForm") == ["Part"]:
-                    resultados.append((f"{doc[i].text} {doc[i+1].text}", "Futuro compuesto"))
-
-        # Futuro perifrástico: ir + a + infinitivo
-        for i in range(len(doc)-2):
-            if doc[i].lemma_ == "ir" and doc[i].morph.get("Tense") == ["Pres"]:
-                if doc[i+1].text.lower() == "a" and doc[i+2].morph.get("VerbForm") == ["Inf"]:
-                    resultados.append((f"{doc[i].text} {doc[i+1].text} {doc[i+2].text}", "Futuro perifrástico"))
-
-    if not resultados: 
-        for token in doc:
-            # Presente simple
-            if token.pos_ == "VERB" and token.morph.get("Tense") == ["Pres"]:
+        if token.pos_ in {"VERB", "AUX"}:
+            tense = token.morph.get("Tense")  # lista de tiempos
+            if "Past" in tense:
+                resultados.append((token.text, "Pasado simple/Imperfecto"))
+            if "Pres" in tense and token.pos_ == "VERB":
                 resultados.append((token.text, "Presente"))
+            if "Fut" in tense:
+                resultados.append((token.text, "Futuro simple"))
+                
+                
+    # Tiempos compuestos y perífrasis con matcher
+    for match_id, start, end in matcher(doc):
+        span = doc[start:end]
+        label = nlp.vocab.strings[match_id]
+        if label == "PERFECTO_COMPUESTO":
+            resultados.append((span.text, "Pretérito perfecto compuesto"))
+        elif label == "PLUSCUAMPERFECTO":
+            resultados.append((span.text, "Pretérito pluscuamperfecto"))
+        elif label == "FUTURO_COMPUESTO":
+            resultados.append((span.text, "Futuro compuesto"))
+        elif label == "FUTURO_PERIFRASTICO":
+            resultados.append((span.text, "Futuro perifrástico"))
+        elif label == "PRESENTE_PROGRESIVO":
+            resultados.append((span.text, "Presente progresivo"))
 
-        # Presente progresivo: estar + gerundio
-        for i in range(len(doc)-1):
-            if doc[i].lemma_ == "estar" and doc[i].morph.get("Tense") == ["Pres"]:
-                if doc[i+1].morph.get("VerbForm") == ["Ger"]:
-                    resultados.append((f"{doc[i].text} {doc[i+1].text}", "Presente progresivo"))
+    # Eliminación de duplicados (mismo verbo por ambos metodos o solapaciones de matcher)
+    vistos = set()
+    resultados_unicos = []
+    for expr, etq in resultados:
+        clave = (expr, etq)
+        if clave not in vistos:
+            vistos.add(clave)
+            resultados_unicos.append(clave)
 
-    return resultados if resultados else f"No se detectó tiempo para la oración"
-
-
+    return resultados_unicos or ["No se detectó un verbo en la oración"]

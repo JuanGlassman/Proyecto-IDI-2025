@@ -1,0 +1,32 @@
+--- Posibles tiempos verbales que actualmente NO se procesan --
+
+* <- tiempos verbales que yo agregaría al programa
++ <- tiempos verbales que podríamos agregar
+- <- tiempos que no pondría ni ahí
+
+
+------- VERBOS SIMPLES -------
+
+* Condicional simple (comería) ---> MUY facil de implementar.
+
+------- VERBOS COMPUESTOS -------
+
+* Condicional compuesto (habría comido).
+
+- Pretérito anterior (hube comido).
+
+------- PERÍFRASIS -------
+
++ Pasado progresivo (estaba comiendo).
+
++ Futuro progresivo (estaré comiendo)
+
++ Condicional progresivo (estaría comiendo).
+
+* Pasado reciente (acabo de comer).
+
+
+
+------- OTRAS MODIFICACIONES -------
+
+* Permitir adverbios en mitad de la perífrasis: "había casi/ya/recientemente comido", "voy ya a comer", "vamos todos a comer".
