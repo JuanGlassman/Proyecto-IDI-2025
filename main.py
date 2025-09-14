@@ -1,5 +1,6 @@
 from builtins import str
 from fastapi import FastAPI 
+import sys
 
 from servicios import invertir_texto, adverbs, detección_de_verbos
 
@@ -16,3 +17,12 @@ def detectar_adverbs(texto: str):
 @app.get("/detección_de_verbos/")
 def verificacion(texto: str):
     return detección_de_verbos.detectar_tiempo_verbal(texto)
+
+
+if len(sys.argv)<1:
+    print("Uso: python main.py arg1 ")
+    sys.exit(1)
+
+
+texto = "".join(sys.argv[1:]) 
+print(verificacion(texto))

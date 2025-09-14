@@ -34,3 +34,4 @@ Thumbs.db
 
 # Archivos extraños de Python compilado
 *.cpython-*
+/environment
