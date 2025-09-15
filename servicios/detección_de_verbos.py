@@ -9,62 +9,67 @@ except OSError:
     nlp = spacy.load("es_core_news_md")
 
 
-    # ------Construccion del matcher ------
-    matcher = Matcher(nlp.vocab)
-    
+# ------Construccion del matcher ------
+matcher = Matcher(nlp.vocab)
 
 
-    # ---- Patrones para el matcher para verbos compuestos y perfífrasis ----
-    
-    
-    # Pretérito perfecto compuesto: haber(Pres) + Part
-    # Ejemplo: "he comido", "has hablado"
-    patrón_perf_comp = [
-        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
-        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},  # opcionales en medio (no, ya, etc.)
-        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
-    ]
-    matcher.add("PERFECTO_COMPUESTO", [patrón_perf_comp])
+
+# ---- Patrones para el matcher para verbos compuestos y perfífrasis ----
 
 
-    # Pretérito pluscuamperfecto: haber(Past) + Part
-    # Ejemplo: "había comido", "habías hablado"
-    patrón_pluscuam = [
-        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Past"]}},
-        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
-        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
-    ]
-    matcher.add("PLUSCUAMPERFECTO", [patrón_pluscuam])
+# Pretérito perfecto compuesto: haber(Pres) + Part
+# Ejemplo: "he comido", "has hablado"
+patrón_perf_comp = [
+    {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},  # opcionales en medio (no, ya, etc.)
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+]
+matcher.add("PERFECTO_COMPUESTO", [patrón_perf_comp])
 
 
-    # Futuro compuesto: haber(Fut) + Part
-    # Ejemplo: "habré comido", "habrás hablado"
-    patrón_fut_comp = [
-        {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Fut"]}},
-        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
-        {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
-    ]
-    matcher.add("FUTURO_COMPUESTO", [patrón_fut_comp])
+patrón_pluscuam_past = [
+    {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Past"]}},
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+]
+
+patrón_pluscuam_imp = [
+    {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Imp"]}},
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+]
+
+matcher.add("PLUSCUAMPERFECTO", [patrón_pluscuam_past, patrón_pluscuam_imp])
 
 
-    # Futuro perifrástico: ir(Pres) + a + Inf
-    # Ejemplo: "voy a comer", "va a hablar"
-    patrón_fut_peri = [
-        {"LEMMA": "ir", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
-        {"LOWER": "a"},
-        {"MORPH": {"IS_SUPERSET": ["VerbForm=Inf"]}}
-    ]
-    matcher.add("FUTURO_PERIFRASTICO", [patrón_fut_peri])
+# Futuro compuesto: haber(Fut) + Part
+# Ejemplo: "habré comido", "habrás hablado"
+patrón_fut_comp = [
+    {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Fut"]}},
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}}
+]
+matcher.add("FUTURO_COMPUESTO", [patrón_fut_comp])
 
 
-    # Presente progresivo: estar(Pres) + (Adv/Part)* + Ger
-    # Ejemplo: "estoy comiendo", "estás hablando"
-    patrón_pres_prog = [
-        {"LEMMA": "estar", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
-        {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
-        {"MORPH": {"IS_SUPERSET": ["VerbForm=Ger"]}}
-    ]
-    matcher.add("PRESENTE_PROGRESIVO", [patrón_pres_prog])
+# Futuro perifrástico: ir(Pres) + a + Inf
+# Ejemplo: "voy a comer", "va a hablar"
+patrón_fut_peri = [
+    {"LEMMA": "ir", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+    {"LOWER": "a"},
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Inf"]}}
+]
+matcher.add("FUTURO_PERIFRASTICO", [patrón_fut_peri])
+
+
+# Presente progresivo: estar(Pres) + (Adv/Part)* + Ger
+# Ejemplo: "estoy comiendo", "estás hablando"
+patrón_pres_prog = [
+    {"LEMMA": "estar", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
+    {"MORPH": {"IS_SUPERSET": ["VerbForm=Ger"]}}
+]
+matcher.add("PRESENTE_PROGRESIVO", [patrón_pres_prog])
 
 
 # Función principal para detectar tiempos verbales
@@ -79,9 +84,10 @@ def detectar_tiempo_verbal(texto: str):
 
     # Tiempos simples con analisis morfológico
     for token in doc:
+        print(f"{token.text:<15}{token.lemma_:<15}{token.pos_:<8}{str(token.morph):<20}{token.dep_:<15}{token.head.text}")
         if token.pos_ in {"VERB", "AUX"}:
             tense = token.morph.get("Tense")  # lista de tiempos
-            if "Past" in tense:
+            if "Past" in tense or "Imp" in tense:
                 resultados.append((token.text, "Pasado simple/Imperfecto"))
             if "Pres" in tense and token.pos_ == "VERB":
                 resultados.append((token.text, "Presente"))
