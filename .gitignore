@@ -19,6 +19,9 @@ venv/
 .env/
 **/entornoFastApi/
 **/.entornoFastApi/
+/environment
+/entorno
+/testEntorno
 
 
 # Archivos de log
@@ -34,6 +37,3 @@ Thumbs.db
 
 # Archivos extraños de Python compilado
 *.cpython-*
-/environment
-/entorno
-/testEntorno
