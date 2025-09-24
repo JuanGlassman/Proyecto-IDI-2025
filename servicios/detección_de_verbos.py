@@ -11,13 +11,13 @@ except OSError:
 # ------Construccion del matcher ------
 matcher = Matcher(nlp.vocab)
 
-# ---- Patrones para el matcher para verbos compuestos y perfífrasis ----
+# ---- Patrones para el matcher para verbos compuestos y perífrasis ----
 
 # Pretérito perfecto compuesto: haber(Pres) + Part
 # Ejemplo: "he comido", "has hablado"
 patron_perf_comp = [
     {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
-    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},  # opcionales en medio (no, ya, etc.)
+    {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
     {"MORPH": {"IS_SUPERSET": ["VerbForm=Part"]}},
 ]
 matcher.add("PERFECTO_COMPUESTO", [patron_perf_comp])
@@ -40,10 +40,7 @@ patron_pluscuam_imp = [
 ]
 matcher.add("PLUSCUAMPERFECTO", [patron_pluscuam_past, patron_pluscuam_imp])
 
-
-
 # Futuro compuesto: haber(Fut) + Part
-# Ejemplo: "habré comido", "habrás hablado"
 patron_fut_comp = [
     {"LEMMA": "haber", "POS": "AUX", "MORPH": {"IS_SUPERSET": ["Tense=Fut"]}},
     {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
@@ -51,9 +48,7 @@ patron_fut_comp = [
 ]
 matcher.add("FUTURO_COMPUESTO", [patron_fut_comp])
 
-
 # Futuro perifrástico: ir(Pres) + a + Inf
-# Ejemplo: "voy a comer", "va a hablar"
 patron_fut_peri = [
     {"LEMMA": "ir", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
     {"LOWER": "a"},
@@ -61,9 +56,7 @@ patron_fut_peri = [
 ]
 matcher.add("FUTURO_PERIFRASTICO", [patron_fut_peri])
 
-
 # Presente progresivo: estar(Pres) + (Adv/Part)* + Ger
-# Ejemplo: "estoy comiendo", "estás hablando"
 patron_pres_prog = [
     {"LEMMA": "estar", "MORPH": {"IS_SUPERSET": ["Tense=Pres"]}},
     {"POS": {"IN": ["ADV", "PART"]}, "OP": "*"},
@@ -72,21 +65,22 @@ patron_pres_prog = [
 matcher.add("PRESENTE_PROGRESIVO", [patron_pres_prog])
 
 
-# Función principal para detectar tiempos verbales
+# -------- Función principal --------
 def detectar_tiempo_verbal(texto: str):
-    """
-    Detecta tiempos verbales (simples y algunas perífrasis) en español usando spaCy.
-    Devuelve una lista de tuplas (expresión_detectada, etiqueta_tiempo).
-    """
     doc = nlp(texto)
     resultados = []
 
     # Tiempos simples con analisis morfológico
-    for token in doc:
+    for i, token in enumerate(doc):
         if token.pos_ in {"VERB", "AUX"}:
             if token.morph.get("VerbForm") != ["Fin"]:
                 continue  # Solo verbos finitos (no verboides)
-            tense = token.morph.get("Tense")  # lista de tiempos
+
+            # Evitar 'haber' si viene seguido de participio (lo maneja el matcher)
+            if token.lemma_ == "haber" and i + 1 < len(doc) and "Part" in doc[i+1].morph.get("VerbForm"):
+                continue
+
+            tense = token.morph.get("Tense")
             if "Past" in tense:
                 resultados.append((token.text, "Pasado simple/Imperfecto"))
             if "Pres" in tense and token.pos_ == "VERB":
