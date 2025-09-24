@@ -118,4 +118,4 @@ def detectar_tiempo_verbal(texto: str):
             vistos.add(clave)
             resultados_unicos.append(clave)
 
-    return resultados_unicos or ["No se detectó un verbo en la oración"]
+    return resultados_unicos or []
